@@ -34,7 +34,7 @@ https://github.com/tevslin/cloudflarepycli
 
 ## How it works
 
-Ping tests for latency and jitter are done with Google, Cloudflare,and openDNS.
+Tests for latency are done by requesting one byte packets from Cloudflare, measuring the elapsed time to get a response, and subtracting the server processing time taken from the header in the returned message. Jitter is computed as the mean of the absolute difference between the arrival of consecutive requests.
 
 The cloudflareclass.py module makes Python requests to various subaddresses of [speed.cloudflare.com](https://speed.cloudflare.com). Their API is not documented, as far as I know, and so that is a vulnerability for this code. There is also a request to [ipdatabase.com](http://www.ipdatabase.com/ip) and the return is screen-scraped for the actual ISP name.
 
