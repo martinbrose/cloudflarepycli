@@ -17,8 +17,11 @@ Type 'cfspeedtest' in the environment where you installed the package. Note that
 ### Options
 
   -h, --help  show help message and exit
+  
   --debug     log network io
+  
   --json      write json to sysout instead of fornmatted results
+  
   --version   show program's version number and exit
   
  ## cloudflareclass usage
@@ -49,7 +52,7 @@ Full source is available in this package.
 
 Billions of federal dollars are being disbursed to improve broadband availability and quality, especially in rural areas. Tools are needed to assure that ISPs deliver the quality they promise. This software is a pro bono contribution to getting those tools written. 
 
-##Disclaimers
+## Disclaimers
 
 No claims of any sort are made for this software. It has been lightly tested on Windows 10 and not in other environments although it "should" be cross platform. Use and/or redistribute solely at your own risk. No commitemnt is made to maintain this software. As noted above, changes made by Clouflare or ipdatabase.com might breeak the functionality.
 
