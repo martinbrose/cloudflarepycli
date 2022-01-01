@@ -29,11 +29,11 @@ latencyreps: number of repetitions for latency test
 """
 
 class cloudflare:
-    
-    uploadtests=((11000,10,'10kB'),(101000, 10,'100kB'),(1001000, 8,'1MB'))
-    downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'),(100001000, 1,'100MB'))
-    version=0.5
-    def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20):
+    #tests chnaged 1/1/22 to mirror those done by web-based test
+    uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
+    downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
+    version=1.5
+    def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,5)):
 
         import requests
         
@@ -66,6 +66,7 @@ class cloudflare:
         if not uptests is None:
             self.uploadtests=uptests
         self.mequests=requests.Session()
+        self.timeout=timeout
 
     def getcolo(self):
     # retrieves cloudflare colo and user ip address
@@ -104,7 +105,7 @@ class cloudflare:
             start=time.time()
             err=False
             try: 
-                r=self.mequests.get('http://speed.cloudflare.com/__down?bytes='+str(numbytes))
+                r=self.mequests.get('http://speed.cloudflare.com/__down?bytes='+str(numbytes),timeout=self.timeout)
                 end=time.time()
             except:
                 err=True
@@ -121,15 +122,15 @@ class cloudflare:
         for i in range(iterations):
             err=False
             try: 
-                r=self.mequests.post('http://speed.cloudflare.com/__up',data=thedata)
+                r=self.mequests.post('http://speed.cloudflare.com/__up',data=thedata,timeout=self.timeout)
             except:
                 err=True
             if not err:
                 servertimes=servertimes+(float(r.headers['Server-Timing'].split('=')[1])/1e3,)
-                return (servertimes)
+        return (servertimes)
 
     def sprint(self,label,value):
-        "time stamps entry and adds to dictionary replaceing speces with underscores in key and optionall prints"
+        "time stamps entry and adds to dictionary replacing speces with underscores in key and optionall prints"
         import time
         if self.printit:
             print(label+":",value)
