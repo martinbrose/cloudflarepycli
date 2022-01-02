@@ -4,7 +4,7 @@ Python CLI and python class for retrieving user's realtime performance statistic
 
 ## Purpose
 
-Retrieve near-term performance data about the service provided to a user by an ISP. The data includes up and download speeds, latency, and jitter. The CLI makes it possible to pipe the data to other processes for possible uploading, analysis etc. and/or to build a GUI for displayying current and past data. The cloudflareclass.py module is useful for varying the types of test taht are done. I will use both in future projects to expand the functionality.
+Retrieve near-term performance data about the service provided to a user by an ISP. The data includes up and download speeds, latency, and jitter. The CLI makes it possible to pipe the data to other processes for possible uploading, analysis etc. and/or to build a GUI for displayying current and past data. The cloudflareclass.py module is useful for varying the types of test that are done. I will use both in future projects to expand the functionality.
 
 ## Install
 
