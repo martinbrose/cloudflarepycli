@@ -97,12 +97,19 @@ class cloudflare:
 
     def download(self,numbytes,iterations):
         #runs download tests
+        import os
+        from contextlib import nullcontext
         import time
-        import wres  
+        if os.name == 'nt':
+            import wres
         fulltimes=() #list for all successful times
         servertimes=() #times reported by server
         requesttimes=() #rough proxy for ttfb
-        with wres.set_resolution():
+        if os.name == 'nt':
+            cm = wres.set_resolution()
+        else:
+            cm = nullcontext()
+        with cm:
             for i in range(iterations):
                 start=time.time()
                 err=False
