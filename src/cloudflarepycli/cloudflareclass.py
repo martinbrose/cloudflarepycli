@@ -7,21 +7,21 @@ cloudflare(thedict=None,debug=False,print=True,downtests=None,uptests=None,laten
 
 thedict: dictionary to store results in
     if not passed in, created here
-    if passed in, used and update - allows keeping partial resutls from previous runs
-    each result has a key and the netry is a dict with "time" and "value" items
+    if passed in, used and update - allows keeping partial results from previous runs
+    each result has a key and the entry is a dict with "time" and "value" items
 debug: True turns on io logging for debugging
 printit: if true, results are printed as well as added to the dictionary
 downtests: tuple of download tests to be performed
     if None, defaultdowntests (see below) is used
     format is ((size, reps, label)......)
         size: size of block to download
-        reps: numer of times to repeat test
+        reps: number of times to repeat test
         label: text label for test - also becomes key in the dict
-uptests: tuple of download tests to be performed
+uptests: tuple of upload tests to be performed
     if None, defaultuptests (see below) is used
     format is ((size, reps, label)......)
-        size: size of block to upnload
-        reps: numer of times to repeat test
+        size: size of block to upload
+        reps: number of times to repeat test
         label: text label for test - also becomes key in the dict
 latencyreps: number of repetitions for latency test
 
@@ -29,7 +29,7 @@ latencyreps: number of repetitions for latency test
 """
 
 class cloudflare:
-    #tests chnaged 1/1/22 to mirror those done by web-based test
+    #tests changed 1/1/22 to mirror those done by web-based test
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
     version="1.6.0"
