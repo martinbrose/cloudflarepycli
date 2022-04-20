@@ -132,7 +132,7 @@ class cloudflare:
         return (servertimes)
 
     def sprint(self,label,value):
-        "time stamps entry and adds to dictionary replacing speces with underscores in key and optionall prints"
+        "time stamps entry and adds to dictionary replacing spaces with underscores in key and optional prints"
         import time
         if self.printit:
             print(label+":",value)
@@ -157,9 +157,9 @@ class cloudflare:
         self.sprint ('latency ms',round(np.median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
-            
+        
         alltests=()
-       
+        
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
             downtimes=np.subtract(fulltimes,requesttimes)
@@ -180,7 +180,3 @@ class cloudflare:
         
         self.sprint('90th percentile upload speed',round(np.percentile(alltests,90),2))
         return(self.thedict)
-
-
-
-    
