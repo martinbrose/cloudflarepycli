@@ -54,7 +54,7 @@ Billions of federal dollars are being disbursed to improve broadband availabilit
 
 ## Disclaimers
 
-No claims of any sort are made for this software. It has been lightly tested on Windows 10 and not in other environments although it "should" be cross platform. Use and/or redistribute solely at your own risk. No commitment is made to maintain this software. As noted above, changes made by Cloudflare or ipdatabase.com might break the functionality.
+No claims of any sort are made for this software. It has been tested on Windows 10 and 11, MacOS, and  Raspberry Pi OS and should work on other Linux versions but not tested. Use and/or redistribute solely at your own risk. No commitment is made to maintain this software. As noted above, changes made by Cloudflare or ipdatabase.com might break the functionality.
 
 I have no affiliation with Cloudflare, any hosting service, or any ISP (except as a customer).
 
