@@ -32,7 +32,7 @@ class cloudflare:
     #tests changed 1/1/22 to mirror those done by web-based test
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
-    version="1.6.0"
+    version="1.7.0"
     def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
@@ -139,7 +139,7 @@ class cloudflare:
         return (servertimes)
 
     def sprint(self,label,value):
-        "time stamps entry and adds to dictionary replacing spaces with underscores in key and optional prints"
+        "time stamps entry and adds to dictionary replacing spaces with underscores in key and optionally prints"
         import time
         if self.printit:
             print(label+":",value)
@@ -164,9 +164,9 @@ class cloudflare:
         self.sprint ('latency ms',round(np.median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
-        
+            
         alltests=()
-        
+       
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
             downtimes=np.subtract(fulltimes,requesttimes)
