@@ -8,7 +8,7 @@ Retrieve near-term performance data about the service provided to a user by an I
 
 ## Install
 
-Type 'pip install cloudflarepycli' in the Python environment you want to use. Note: code here is one version later than what's on PyPI. the pip installable version is still Windows only.
+Type 'pip install cloudflarepycli' in the Python environment you want to use.
 
 ## CLI usage
 
@@ -36,7 +36,7 @@ https://github.com/tevslin/cloudflarepycli
 
 Tests for latency are done by requesting one byte packets from Cloudflare, measuring the elapsed time to get a response, and subtracting the server processing time taken from the header in the returned message. Jitter is computed as the mean of the absolute difference between the arrival of consecutive requests.
 
-The cloudflareclass.py module makes Python requests to various subaddresses of [speed.cloudflare.com](https://speed.cloudflare.com). Their API is not documented, as far as I know, and so that is a vulnerability for this code. There is also a request to [ipdatabase.com](http://www.ipdatabase.com/ip) and the return is screen-scraped for the actual ISP name.
+The cloudflareclass.py module makes Python requests to various subaddresses of [speed.cloudflare.com](https://speed.cloudflare.com). Their API is not documented, as far as I know, and so that is a vulnerability for this code.
 
 Mirroring the performance of the Cloudflare webpage, the CLI does multiple uploads and downloads with different block sizes and the 90th percentile of all these tests is used for calculating up and download times. Results are similar to those obtained from the webpage. Tests can be varied using the cloudflareclass module.
 
