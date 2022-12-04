@@ -3,7 +3,7 @@
 Created on Fri Nov  5 15:10:57 2021
 class object for connection testing with requests to speed.cloudflare.com
 runs tests and stores results in dictionary
-cloudflare(thedict=None,debug=False,print=True,downtests=None,uptests=None,latencyreps=20)
+cloudflare(thedict=None,debug=False,print=True,bits=False,downtests=None,uptests=None,latencyreps=20)
 
 thedict: dictionary to store results in
     if not passed in, created here
@@ -11,6 +11,7 @@ thedict: dictionary to store results in
     each result has a key and the entry is a dict with "time" and "value" items
 debug: True turns on io logging for debugging
 printit: if true, results are printed as well as added to the dictionary
+bits: if true, results are printed as bits instead of Mbps
 downtests: tuple of download tests to be performed
     if None, defaultdowntests (see below) is used
     format is ((size, reps, label)......)
@@ -32,8 +33,8 @@ class cloudflare:
     #tests changed 1/1/22 to mirror those done by web-based test
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
-    version="1.7.0"
-    def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
+    version="1.7.1"
+    def __init__(self,thedict=None,debug=False,printit=True,bits=False,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
         
@@ -58,6 +59,7 @@ class cloudflare:
 
         self.debug=debug
         self.printit=printit
+        self.bits=bits
         self.latencyreps=latencyreps
         
         self.thedict={} if thedict is None else thedict
@@ -170,7 +172,10 @@ class cloudflare:
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
             downtimes=np.subtract(fulltimes,requesttimes)
-            downspeeds=(tests[0]*8/downtimes)/1e6
+            if self.bits:
+                downspeeds=(tests[0]*8/downtimes)
+            else:
+                downspeeds=(tests[0]*8/downtimes)/1e6
             self.sprint(tests[2]+' download Mbps',round(np.mean(downspeeds),2))
             for speed in downspeeds:
                 alltests=alltests+(speed,)
@@ -180,8 +185,12 @@ class cloudflare:
         alltests=()
         for tests in self.uploadtests:
             servertimes=self.upload(tests[0],tests[1])
-            upspeeds=(tests[0]*8/np.asarray(servertimes))/1e6
+            if self.bits:
+                upspeeds=(tests[0]*8/np.asarray(servertimes))
+            else:
+                upspeeds=(tests[0]*8/np.asarray(servertimes))/1e6
             self.sprint(tests[2]+' upload Mbps',round(np.mean(upspeeds),2))
+
             for speed in upspeeds:
                 alltests=alltests+(speed,)
         
