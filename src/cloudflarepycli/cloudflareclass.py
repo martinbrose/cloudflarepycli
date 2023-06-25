@@ -70,7 +70,6 @@ class cloudflare:
 
     def getcolo(self):
     # retrieves cloudflare colo and user ip address
-
         r=self.mequests.get('http://speed.cloudflare.com/cdn-cgi/trace')       
         dicty={}
         for lines in r.text.splitlines():
@@ -78,14 +77,16 @@ class cloudflare:
             dicty[words[0]]=words[1]
         return dicty['colo'],dicty['ip']
     
-    def getisp(self,ip):
-        from bs4 import BeautifulSoup
-        import requests
-        
-        r=requests.get("http://www.ipdatabase.com/ip/"+ip)
-        soup = BeautifulSoup(r.content, 'html.parser')
-        first=soup.find(class_='table-head',string='Organization')
-        return(first.find_next_sibling().string)
+    # The original author used this to communicate with a third party web service.
+    # That service is no longer available and I don't find this information necessary, so I am removing this functionality.
+    #def getisp(self,ip):
+    #    from bs4 import BeautifulSoup
+    #    import requests
+    #    
+    #    r=requests.get("http://www.ipdatabase.com/ip/"+ip)
+    #    soup = BeautifulSoup(r.content, 'html.parser')
+    #    first=soup.find(class_='table-head',string='Organization')
+    #    return(first.find_next_sibling().string)
 
     def getcolodetails(self,colo):
         #retrieves colocation list for cloudflare
@@ -152,8 +153,8 @@ class cloudflare:
         self.sprint('version',self.version)
         colo,ip=self.getcolo() 
         self.sprint('your ip',ip)
-        isp=self.getisp(ip)
-        self.sprint('your ISP',isp)
+        #isp=self.getisp(ip) #see comments above
+        #self.sprint('your ISP',isp) #see comments above
         self.sprint('test location code',colo)
         region,city=self.getcolodetails(colo)
         self.sprint ('test location city',city)
@@ -164,7 +165,6 @@ class cloudflare:
         self.sprint ('latency ms',round(np.median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
-            
         alltests=()
        
         for tests in self.downloadtests:
