@@ -32,7 +32,7 @@ class cloudflare:
     #tests changed 1/1/22 to mirror those done by web-based test
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
-    version="1.7.0"
+    version="1.7.1"
     def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
@@ -153,8 +153,8 @@ class cloudflare:
         self.sprint('version',self.version)
         colo,ip=self.getcolo() 
         self.sprint('your ip',ip)
-        #isp=self.getisp(ip) #see comments above
-        #self.sprint('your ISP',isp) #see comments above
+        #isp=self.getisp(ip) #see comments on line 80 above
+        #self.sprint('your ISP',isp) #see comments on line 80 above
         self.sprint('test location code',colo)
         region,city=self.getcolodetails(colo)
         self.sprint ('test location city',city)
