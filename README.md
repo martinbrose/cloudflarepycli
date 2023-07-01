@@ -8,7 +8,7 @@ Retrieve near-term performance data about the service provided to a user by an I
 
 ## Install
 
-Type 'pip install cloudflarepycli' in the Python environment you want to use.
+For now, install from here. pypi version is not uptodate.
 
 ## CLI usage
 
