@@ -35,6 +35,11 @@ def main():
     thedict=thetester.runalltests()
     if args.json:
         print (json.dumps(thedict))
+        
+    #test deprecated rountines
+    print (thetester.getcolo())
+    print (thetester.getcolodetails(""))
+    print (thetester.getisp(""))
 
 if __name__=='__main__':
     main()

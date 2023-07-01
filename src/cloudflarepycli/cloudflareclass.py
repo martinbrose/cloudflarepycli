@@ -25,6 +25,12 @@ uptests: tuple of upload tests to be performed
         label: text label for test - also becomes key in the dict
 latencyreps: number of repetitions for latency test
 
+version 1.8.0
+removed dependency on ipdatabase.com
+added getfulldata to get all data about test locs and isp from cloudflare
+getcolo, getcolodetails, and getisp deprecated but left functional
+
+
 @author: /tevslin
 """
 
@@ -32,7 +38,7 @@ class cloudflare:
     #tests changed 1/1/22 to mirror those done by web-based test
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
-    version="1.7.0"
+    version="1.8.0" #7/1/23
     def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
@@ -69,31 +75,29 @@ class cloudflare:
         self.timeout=timeout
 
     def getcolo(self):
-    # retrieves cloudflare colo and user ip address
-
-        r=self.mequests.get('http://speed.cloudflare.com/cdn-cgi/trace')       
-        dicty={}
-        for lines in r.text.splitlines():
-            words=lines.split("=")
-            dicty[words[0]]=words[1]
-        return dicty['colo'],dicty['ip']
+    # retrieves cloudflare colo, user ip address 
+    # deprecated but left for compatability
+        colo,ip,org,region,city=self.getfulldata()
+        return colo,ip
     
     def getisp(self,ip):
-        from bs4 import BeautifulSoup
-        import requests
-        
-        r=requests.get("http://www.ipdatabase.com/ip/"+ip)
-        soup = BeautifulSoup(r.content, 'html.parser')
-        first=soup.find(class_='table-head',string='Organization')
-        return(first.find_next_sibling().string)
-
+    # retrieves ISP
+    # deprecated but left for compatability
+        colo,ip,org,region,city=self.getfulldata()
+        return org
+    
     def getcolodetails(self,colo):
-        #retrieves colocation list for cloudflare
-        r=self.mequests.get('http://speed.cloudflare.com/locations')
-        for locs in r.json():
-            if locs['iata']==colo: #if match found
-                return(locs['region'],locs['city'])
-        return ("not found","not found")
+        #retrieves region and city for cf gateway
+        # deprecated but left for compatability
+        colo,ip,org,region,city=self.getfulldata()
+        return region,city
+
+    
+    def getfulldata(self):
+    # retrieves cloudflare colo, user ip address, ISP, city, and region
+        r=self.mequests.get('http://speed.cloudflare.com/meta')       
+        dicty=r.json()
+        return dicty['colo'],dicty['clientIp'],dicty['asOrganization'],dicty['region'],dicty['city']
 
     def download(self,numbytes,iterations):
         #runs download tests
@@ -150,12 +154,10 @@ class cloudflare:
         import numpy as np
         
         self.sprint('version',self.version)
-        colo,ip=self.getcolo() 
+        colo,ip,isp,region,city=self.getfulldata() 
         self.sprint('your ip',ip)
-        isp=self.getisp(ip)
         self.sprint('your ISP',isp)
         self.sprint('test location code',colo)
-        region,city=self.getcolodetails(colo)
         self.sprint ('test location city',city)
         self.sprint ('test location region',region)        
         fulltimes,servertimes,requesttimes=self.download(1,self.latencyreps) #measure latency and jitter
