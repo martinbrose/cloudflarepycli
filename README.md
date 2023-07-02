@@ -8,7 +8,7 @@ Retrieve near-term performance data about the service provided to a user by an I
 
 ## Install
 
-For now, install from here. pypi version is not uptodate.
+pip install cloudflarepycli
 
 ## CLI usage
 
