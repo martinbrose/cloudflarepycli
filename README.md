@@ -8,7 +8,7 @@ Retrieve near-term performance data about the service provided to a user by an I
 
 ## Install
 
-pip install cloudflarepycli
+pip install cloudflarepycli \
 Windows users must also: pip install wres
 
 ## CLI usage
