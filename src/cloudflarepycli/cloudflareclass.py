@@ -149,9 +149,42 @@ class cloudflare:
             print(label+":",value)
         self.thedict[label.replace(' ','_')]={"time":time.time(),"value":value} #add to dictionary
         
+    def calculate_mean(self, data):
+        
+        mean_value = sum(data) / len(data)
+
+        return mean_value
+    
+    def calculate_median(self, data):
+        sorted_data = sorted(data)
+        index = len(sorted_data) // 2
+        
+        if len(sorted_data) % 2 == 0:
+            median_value = (sorted_data[index] + sorted_data[index - 1]) / 2
+        else:
+            median_value = sorted_data[index]
+        
+        return median_value
+
+    def calculate_percentile(self, data, percentile):
+        sorted_data = sorted(data)
+        index = (percentile / 100) * len(sorted_data)
+        
+        if index.is_integer():
+            percentile_value = sorted_data[int(index)]
+        else:
+            lower_index = int(index)
+            upper_index = lower_index + 1
+            lower_value = sorted_data[lower_index]
+            upper_value = sorted_data[upper_index]
+            interpolation_factor = index - lower_index
+            percentile_value = lower_value + (upper_value - lower_value) * interpolation_factor
+        
+        return percentile_value
+
     def runalltests(self):
         #runs full suite of tests
-        import numpy as np
+        import array
         
         self.sprint('version',self.version)
         colo,ip,isp,region,city=self.getfulldata() 
@@ -161,31 +194,31 @@ class cloudflare:
         self.sprint ('test location city',city)
         self.sprint ('test location region',region)        
         fulltimes,servertimes,requesttimes=self.download(1,self.latencyreps) #measure latency and jitter
-        latencies=np.subtract(requesttimes,servertimes)*1e3
-        jitter=np.median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
-        self.sprint ('latency ms',round(np.median(latencies),2))
+        latencies= [(requesttimes[i] - servertimes[i])*1e3 for i in range(len(requesttimes))]
+        jitter=self.calculate_median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
+        self.sprint ('latency ms',round(self.calculate_median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
             
         alltests=()
-       
+        
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
-            downtimes=np.subtract(fulltimes,requesttimes)
-            downspeeds=(tests[0]*8/downtimes)/1e6
-            self.sprint(tests[2]+' download Mbps',round(np.mean(downspeeds),2))
+            downtimes = array.array('f',[fulltimes[i] - requesttimes[i] for i in range(len(fulltimes))])
+            downspeeds = [tests[0]*8 / downtimes[i] / 1e6 for i in range(1,len(downtimes))]
+            self.sprint(tests[2]+' download Mbps',round(self.calculate_mean(downspeeds),2))
             for speed in downspeeds:
                 alltests=alltests+(speed,)
     
-        self.sprint('90th percentile download speed',round(np.percentile(alltests,90),2))
+        self.sprint('90th percentile download speed',round(self.calculate_percentile(alltests,90),2))
         
         alltests=()
         for tests in self.uploadtests:
             servertimes=self.upload(tests[0],tests[1])
-            upspeeds=(tests[0]*8/np.asarray(servertimes))/1e6
-            self.sprint(tests[2]+' upload Mbps',round(np.mean(upspeeds),2))
+            upspeeds = [tests[0]*8 / servertimes[i] / 1e6 for i in range(1,len(servertimes))]
+            self.sprint(tests[2]+' upload Mbps',round(self.calculate_mean(upspeeds),2))
             for speed in upspeeds:
                 alltests=alltests+(speed,)
         
-        self.sprint('90th percentile upload speed',round(np.percentile(alltests,90),2))
+        self.sprint('90th percentile upload speed',round(self.calculate_percentile(alltests,90),2))
         return(self.thedict)
