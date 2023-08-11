@@ -25,9 +25,83 @@ Type 'cfspeedtest' in the environment where you installed the package. Note that
   
   --version   show program's version number and exit
   
- ## cloudflareclass usage
- 
-(WIP) For now see the source code.
+## Cloudflareclass Documentation
+
+The Cloudflare Connection Testing Class is a Python module that facilitates testing the speed and latency of your internet connection to Cloudflare's servers. It utilizes the `requests` library to perform various tests and provides insights into download and upload speeds, latency, and other connection metrics.
+
+### Features
+
+- Measures download and upload speeds to Cloudflare's servers.
+- Calculates latency and jitter for connection stability assessment.
+- Provides information about your IP address, ISP, test location, and more.
+- Easy-to-use class interface to conduct various connection tests.
+
+### Function arguments
+
+  ```python
+  cloudflare(thedict=None,debug=False,print=True,downtests=None,uptests=None,latencyreps=20)
+  ```
+
+
+- `thedict`: dictionary to store results in
+    - if not passed in, created here
+    - if passed in, used and update - allows keeping partial results from previous runs
+    - each result has a key and the entry is a dict with "time" and "value" items
+- `debug`: if True, turns on io logging for debugging
+- `printit`: if True, results are printed as well as added to the dictionary
+- `downtests`: tuple of download tests to be performed
+    - if None, four download tests are performed consecutively: 100kB, 1MB, 10MB, and 25MB
+    - format is ((size, reps, label)......)
+        - size: size of block to download
+        - reps: number of times to repeat test
+        - label: text label for test - also becomes key in the dict
+- `uptests`: tuple of upload tests to be performed
+    - if None, three upload tests are performed consecutively: 100kB, 1MB, and 10MB
+    - format is ((size, reps, label)......)
+        - size: size of block to upload
+        - reps: number of times to repeat test
+        - label: text label for test - also becomes key in the dict
+- `latencyreps`: number of repetitions for latency test
+
+#### Usage
+
+The `cloudflare` class provides methods to perform various connection tests and retrieve relevant information. Here's a brief overview of its main methods:
+
+- `runalltests()`: Runs a full suite of tests, including latency, jitter, download, and upload tests. Returns a dictionary with test results.
+- `getfulldata()`: Retrieves information about your IP address, ISP, test location, and more.
+- `download(numbytes, iterations)`: Runs download tests for the specified number of bytes and iterations. Returns timing results.
+- `upload(numbytes, iterations)`: Runs upload tests for the specified number of bytes and iterations. Returns timing results.
+
+Refer to the `cloudflareclass.py`` file for detailed documentation on each method and its parameters.
+
+### Stand-alone usage
+#### Getting Started
+
+1. Install the required dependencies:
+    ```bash
+    pip install requests numpy
+    ```
+2. Download the cloudflareclass.py file and include it in your project.
+3. Import the cloudflare class in your Python script:
+    ```python
+    from cloudflareclass import cloudflare
+    ```
+4. Create an instance of the cloudflare class and run tests:
+    ```python
+    cf = cloudflare()
+    results = cf.runalltests()
+    print(results)
+    ```
+
+#### Example
+
+```python
+from cloudflareclass import cloudflare
+
+cf = cloudflare()
+results = cf.runalltests()
+print(results)
+```
 
 ## Source repository
 
