@@ -205,7 +205,7 @@ class cloudflare:
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
             downtimes = array.array('f',[fulltimes[i] - requesttimes[i] for i in range(len(fulltimes))])
-            downspeeds = [tests[0]*8 / downtimes[i] / 1e6 for i in range(1,len(downtimes))]
+            downspeeds = [tests[0]*8 / downtimes[i] / 1e6 for i in range(len(downtimes))]
             self.sprint(tests[2]+' download Mbps',round(self.calculate_mean(downspeeds),2))
             for speed in downspeeds:
                 alltests=alltests+(speed,)
@@ -215,7 +215,7 @@ class cloudflare:
         alltests=()
         for tests in self.uploadtests:
             servertimes=self.upload(tests[0],tests[1])
-            upspeeds = [tests[0]*8 / servertimes[i] / 1e6 for i in range(1,len(servertimes))]
+            upspeeds = [tests[0]*8 / servertimes[i] / 1e6 for i in range(len(servertimes))]
             self.sprint(tests[2]+' upload Mbps',round(self.calculate_mean(upspeeds),2))
             for speed in upspeeds:
                 alltests=alltests+(speed,)
