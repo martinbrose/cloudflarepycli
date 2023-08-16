@@ -149,23 +149,6 @@ class cloudflare:
             print(label+":",value)
         self.thedict[label.replace(' ','_')]={"time":time.time(),"value":value} #add to dictionary
         
-    def calculate_mean(self, data):
-        
-        mean_value = sum(data) / len(data)
-
-        return mean_value
-    
-    def calculate_median(self, data):
-        sorted_data = sorted(data)
-        index = len(sorted_data) // 2
-        
-        if len(sorted_data) % 2 == 0:
-            median_value = (sorted_data[index] + sorted_data[index - 1]) / 2
-        else:
-            median_value = sorted_data[index]
-        
-        return median_value
-
     def calculate_percentile(self, data, percentile):
         sorted_data = sorted(data)
         index = (percentile / 100) * len(sorted_data)
@@ -185,6 +168,7 @@ class cloudflare:
     def runalltests(self):
         #runs full suite of tests
         import array
+        import statistics
         
         self.sprint('version',self.version)
         colo,ip,isp,region,city=self.getfulldata() 
@@ -195,8 +179,8 @@ class cloudflare:
         self.sprint ('test location region',region)        
         fulltimes,servertimes,requesttimes=self.download(1,self.latencyreps) #measure latency and jitter
         latencies= [(requesttimes[i] - servertimes[i])*1e3 for i in range(len(requesttimes))]
-        jitter=self.calculate_median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
-        self.sprint ('latency ms',round(self.calculate_median(latencies),2))
+        jitter=statistics.median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
+        self.sprint ('latency ms',round(statistics.median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
             
@@ -206,7 +190,7 @@ class cloudflare:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
             downtimes = array.array('f',[fulltimes[i] - requesttimes[i] for i in range(len(fulltimes))])
             downspeeds = [tests[0]*8 / downtimes[i] / 1e6 for i in range(len(downtimes))]
-            self.sprint(tests[2]+' download Mbps',round(self.calculate_mean(downspeeds),2))
+            self.sprint(tests[2]+' download Mbps',round(statistics.mean(downspeeds),2))
             for speed in downspeeds:
                 alltests=alltests+(speed,)
     
@@ -216,7 +200,7 @@ class cloudflare:
         for tests in self.uploadtests:
             servertimes=self.upload(tests[0],tests[1])
             upspeeds = [tests[0]*8 / servertimes[i] / 1e6 for i in range(len(servertimes))]
-            self.sprint(tests[2]+' upload Mbps',round(self.calculate_mean(upspeeds),2))
+            self.sprint(tests[2]+' upload Mbps',round(statistics.mean(upspeeds),2))
             for speed in upspeeds:
                 alltests=alltests+(speed,)
         
