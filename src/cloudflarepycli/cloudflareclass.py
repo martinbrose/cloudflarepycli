@@ -149,21 +149,28 @@ class cloudflare:
             print(label+":",value)
         self.thedict[label.replace(' ','_')]={"time":time.time(),"value":value} #add to dictionary
         
+
     def calculate_percentile(self, data, percentile):
+        """
+        Find the percentile of a list of values.
+
+        Input:
+        data - is a list of values.
+        percent - a float value from 0.0 to 1.0.
+
+        Output: the percentile of the values
+        """
         sorted_data = sorted(data)
-        index = (percentile / 100) * len(sorted_data)
-        
+        index = (percentile / 100) * (len(sorted_data)-1)
+
         if index.is_integer():
-            percentile_value = sorted_data[int(index)]
+            return sorted_data[int(index)]
         else:
             lower_index = int(index)
             upper_index = lower_index + 1
-            lower_value = sorted_data[lower_index]
-            upper_value = sorted_data[upper_index]
-            interpolation_factor = index - lower_index
-            percentile_value = lower_value + (upper_value - lower_value) * interpolation_factor
-        
-        return percentile_value
+            d0 = sorted_data[int(lower_index)] * (upper_index-index)
+            d1 = sorted_data[int(upper_index)] * (index-lower_index)
+            return d0+d1
 
     def runalltests(self):
         #runs full suite of tests
