@@ -149,9 +149,33 @@ class cloudflare:
             print(label+":",value)
         self.thedict[label.replace(' ','_')]={"time":time.time(),"value":value} #add to dictionary
         
+
+    def calculate_percentile(self, data, percentile):
+        """
+        Find the percentile of a list of values.
+
+        Input:
+        data - is a list of values.
+        percent - a float value from 0.0 to 1.0.
+
+        Output: the percentile of the values
+        """
+        sorted_data = sorted(data)
+        index = (percentile / 100) * (len(sorted_data)-1)
+
+        if index.is_integer():
+            return sorted_data[int(index)]
+        else:
+            lower_index = int(index)
+            upper_index = lower_index + 1
+            d0 = sorted_data[int(lower_index)] * (upper_index-index)
+            d1 = sorted_data[int(upper_index)] * (index-lower_index)
+            return d0+d1
+
     def runalltests(self):
         #runs full suite of tests
-        import numpy as np
+        import array
+        import statistics
         
         self.sprint('version',self.version)
         colo,ip,isp,region,city=self.getfulldata() 
@@ -161,31 +185,31 @@ class cloudflare:
         self.sprint ('test location city',city)
         self.sprint ('test location region',region)        
         fulltimes,servertimes,requesttimes=self.download(1,self.latencyreps) #measure latency and jitter
-        latencies=np.subtract(requesttimes,servertimes)*1e3
-        jitter=np.median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
-        self.sprint ('latency ms',round(np.median(latencies),2))
+        latencies= [(requesttimes[i] - servertimes[i])*1e3 for i in range(len(requesttimes))]
+        jitter=statistics.median([abs(latencies[i]-latencies[i-1]) for i in range(1,len(latencies))])
+        self.sprint ('latency ms',round(statistics.median(latencies),2))
         self.sprint ('Jitter ms',round(jitter,2))
         
             
         alltests=()
-       
+        
         for tests in self.downloadtests:
             fulltimes,servertimes,requesttimes=self.download(tests[0],tests[1])
-            downtimes=np.subtract(fulltimes,requesttimes)
-            downspeeds=(tests[0]*8/downtimes)/1e6
-            self.sprint(tests[2]+' download Mbps',round(np.mean(downspeeds),2))
+            downtimes = array.array('f',[fulltimes[i] - requesttimes[i] for i in range(len(fulltimes))])
+            downspeeds = [tests[0]*8 / downtimes[i] / 1e6 for i in range(len(downtimes))]
+            self.sprint(tests[2]+' download Mbps',round(statistics.mean(downspeeds),2))
             for speed in downspeeds:
                 alltests=alltests+(speed,)
     
-        self.sprint('90th percentile download speed',round(np.percentile(alltests,90),2))
+        self.sprint('90th percentile download speed',round(self.calculate_percentile(alltests,90),2))
         
         alltests=()
         for tests in self.uploadtests:
             servertimes=self.upload(tests[0],tests[1])
-            upspeeds=(tests[0]*8/np.asarray(servertimes))/1e6
-            self.sprint(tests[2]+' upload Mbps',round(np.mean(upspeeds),2))
+            upspeeds = [tests[0]*8 / servertimes[i] / 1e6 for i in range(len(servertimes))]
+            self.sprint(tests[2]+' upload Mbps',round(statistics.mean(upspeeds),2))
             for speed in upspeeds:
                 alltests=alltests+(speed,)
         
-        self.sprint('90th percentile upload speed',round(np.percentile(alltests,90),2))
+        self.sprint('90th percentile upload speed',round(self.calculate_percentile(alltests,90),2))
         return(self.thedict)
