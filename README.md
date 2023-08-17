@@ -1,5 +1,5 @@
 # Temporary note
-PyPi is still vresion 1.8.0
+PyPi is still version 1.8.0
 
 # cloudflarepycli
 
