@@ -30,6 +30,9 @@ removed dependency on ipdatabase.com
 added getfulldata to get all data about test locs and isp from cloudflare
 getcolo, getcolodetails, and getisp deprecated but left functional
 
+version 1.8.1 (courtesey of Martin Brose)
+removed numpy dependencies to reduce footprint in docker environments
+
 
 @author: /tevslin
 """
@@ -39,6 +42,7 @@ class cloudflare:
     uploadtests=((101000,8,'100kB'),(1001000, 6,'1MB'),(10001000, 4,'10MB'))
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
     version="1.8.0" #7/1/23
+    version="1.8.1" #8/17/23
     def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
