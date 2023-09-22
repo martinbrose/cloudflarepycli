@@ -1,6 +1,3 @@
-# Temporary note
-PyPi is still version 1.8.0
-
 # cloudflarepycli
 
 Python CLI and python class for retrieving user's realtime performance statistics.
