@@ -6,7 +6,6 @@ This uses endpoints from speed.cloudflare.com.
 
 from __future__ import annotations
 
-import array
 import statistics
 import time
 from enum import Enum
@@ -190,13 +189,10 @@ class CloudflareSpeedtest:
             timers = self.run_test(test)
 
             if test.name == "latency":
-                latencies = array.array(
-                    "f",
-                    [
-                        (timers.request[i] - timers.server[i]) * 1e3
-                        for i in range(len(timers.request))
-                    ],
-                )
+                latencies = [
+                    (timers.request[i] - timers.server[i]) * 1e3
+                    for i in range(len(timers.request))
+                ]
                 jitter = statistics.median(
                     [
                         abs(latencies[i] - latencies[i - 1])
@@ -211,21 +207,15 @@ class CloudflareSpeedtest:
                 continue
 
             if test.type == TestType.Down:
-                speeds = array.array(
-                    "f",
-                    [
-                        int(test.bits / (timers.full[i] - timers.server[i]))
-                        for i in range(len(timers.full))
-                    ],
-                )
+                speeds = [
+                    int(test.bits / (timers.full[i] - timers.server[i]))
+                    for i in range(len(timers.full))
+                ]
             else:
-                speeds = array.array(
-                    "f",
-                    [
-                        int(test.bits / server_time)
-                        for server_time in timers.server
-                    ],
-                )
+                speeds = [
+                    int(test.bits / server_time)
+                    for server_time in timers.server
+                ]
             data[test.type.name.lower()].extend(speeds)
             self.sprint(
                 f"{test.name}_{test.type.name.lower()}_bps",
