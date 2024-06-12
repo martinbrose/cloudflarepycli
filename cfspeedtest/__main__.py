@@ -1,3 +1,5 @@
+"""The cfspeedtest CLI implementation."""
+
 import json
 import sys
 
@@ -10,7 +12,7 @@ def cfspeedtest() -> None:
     """Run a network speedtest suite via Cloudflare and ping."""
     args = sys.argv[1:]
 
-    set_verbosity("--debug" in args)
+    set_verbosity(debug="--debug" in args)
 
     if "--version" in args:
         log.info("cfspeedtest %s", __version__)

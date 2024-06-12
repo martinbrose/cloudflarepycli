@@ -1,30 +1,7 @@
 """
-Created on Fri Nov  5 15:10:57 2021
-class object for connection testing with requests to speed.cloudflare.com
-runs tests and stores results in dictionary
-cloudflare(thedict=None,debug=False,print=True,downtests=None,uptests=None,latencyreps=20)
+Library for the Cloudflare speedtest suite.
 
-thedict: dictionary to store results in
-    if not passed in, created here
-    if passed in, used and update - allows keeping partial results from previous runs
-    each result has a key and the entry is a dict with "time" and "value" items
-debug: True turns on io logging for debugging
-printit: if true, results are printed as well as added to the dictionary
-downtests: tuple of download tests to be performed
-    if None, defaultdowntests (see below) is used
-    format is ((size, reps, label)......)
-        size: size of block to download
-        reps: number of times to repeat test
-        label: text label for test - also becomes key in the dict
-uptests: tuple of upload tests to be performed
-    if None, defaultuptests (see below) is used
-    format is ((size, reps, label)......)
-        size: size of block to upload
-        reps: number of times to repeat test
-        label: text label for test - also becomes key in the dict
-latencyreps: number of repetitions for latency test
-
-@author: /tevslin
+This uses endpoints from speed.cloudflare.com.
 """
 
 from __future__ import annotations
@@ -42,6 +19,8 @@ if TYPE_CHECKING:
 
 
 class TestType(Enum):
+    """The type of an individual test."""
+
     Down = "GET"
     Up = "POST"
 
@@ -88,7 +67,13 @@ class TestResult(NamedTuple):
 
 
 class TestTimers(NamedTuple):
-    """A collection of test timer collections."""
+    """
+    A collection of test timer collections.
+
+    Here, `full` is the actual time taken to prepare and perform the request,
+    `server` is the time taken to process the request as reported by the worker,
+    and `request` is the internal client time elapsed to complete the request.
+    """
 
     full: list[float]
     server: list[float]
@@ -108,14 +93,28 @@ class TestMetadata(NamedTuple):
 class CloudflareSpeedtest:
     """Suite of speedtests."""
 
-    def __init__(
+    def __init__(  # noqa: D417
         self,
         results: dict[str, TestResult] | None = None,
         tests: TestSpecs = DEFAULT_TESTS,
-        timeout: tuple[float, float] = (3.05, 25),
+        timeout: tuple[float, float] | float = (3.05, 25),
         logger: Logger | None = None,
     ) -> None:
-        """Initialize the test suite."""
+        """
+        Initialize the test suite.
+
+        Arguments:
+        ---------
+        - `results`: A dictionary of test results. This can be used to include
+        results from previous runs.
+        - `tests`: The specifications (see `TestSpec`) for all tests to run.
+        - `timeout`: The timeout settings for all requests. See the Timeouts
+        page of the `requests` documentation for more information.
+        - `logger`: The logger that `CloudflareSpeedtest` will use when it
+        runs tests, exclusively via `run_all`. When this is set to None,
+        no logging will occur.
+
+        """
         self.results = results or {}
         self.tests = tests
         self.request_sess = requests.Session()
@@ -166,7 +165,7 @@ class CloudflareSpeedtest:
 
     @staticmethod
     def calculate_percentile(data: list[float], percentile: float) -> float:
-        """Find the percentile of a sorted list of values."""
+        """Find the percentile of a list of values."""
         data = sorted(data)
         idx = (len(data) - 1) * percentile
         rem = idx % 1
@@ -191,40 +190,51 @@ class CloudflareSpeedtest:
             timers = self.run_test(test)
 
             if test.name == "latency":
-                latencies = array.array("f", [
-                    (timers.request[i] - timers.server[i]) * 1e3
-                    for i in range(len(timers.request))
-                ])
-                jitter = statistics.median([
-                    abs(latencies[i] - latencies[i - 1])
-                    for i in range(1, len(latencies))
-                ])
+                latencies = array.array(
+                    "f",
+                    [
+                        (timers.request[i] - timers.server[i]) * 1e3
+                        for i in range(len(timers.request))
+                    ],
+                )
+                jitter = statistics.median(
+                    [
+                        abs(latencies[i] - latencies[i - 1])
+                        for i in range(1, len(latencies))
+                    ]
+                )
                 self.sprint(
                     "latency",
-                    TestResult(round(statistics.median(latencies), 2))
+                    TestResult(round(statistics.median(latencies), 2)),
                 )
                 self.sprint("jitter", TestResult(round(jitter, 2)))
                 continue
 
             if test.type == TestType.Down:
-                speeds = array.array("f", [
-                    int(test.bits / (timers.full[i] - timers.server[i]))
-                    for i in range(len(timers.full))
-                ])
+                speeds = array.array(
+                    "f",
+                    [
+                        int(test.bits / (timers.full[i] - timers.server[i]))
+                        for i in range(len(timers.full))
+                    ],
+                )
             else:
-                speeds = array.array("f", [
-                    int(test.bits / server_time)
-                    for server_time in timers.server
-                ])
+                speeds = array.array(
+                    "f",
+                    [
+                        int(test.bits / server_time)
+                        for server_time in timers.server
+                    ],
+                )
             data[test.type.name.lower()].extend(speeds)
             self.sprint(
                 f"{test.name}_{test.type.name.lower()}_bps",
-                TestResult(int(statistics.mean(speeds)))
+                TestResult(int(statistics.mean(speeds))),
             )
         for k, v in data.items():
             self.sprint(
                 f"90th_percentile_{k}_bps",
-                TestResult(int(self.calculate_percentile(v, 0.9)))
+                TestResult(int(self.calculate_percentile(v, 0.9))),
             )
 
         return self.results
