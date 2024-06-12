@@ -9,7 +9,7 @@ from cfspeedtest.version import __version__
 
 
 def cfspeedtest() -> None:
-    """Run a network speedtest suite via Cloudflare and ping."""
+    """Run a network speedtest suite via Cloudflare."""
     args = sys.argv[1:]
 
     set_verbosity(debug="--debug" in args)
@@ -19,17 +19,11 @@ def cfspeedtest() -> None:
         log.debug("Python %s", sys.version)
         sys.exit(0)
 
-    if "--json" in args:
-        print(
-            json.dumps(
-                {
-                    k: v._asdict()
-                    for k, v in CloudflareSpeedtest().run_all().items()
-                }
-            )
-        )
-    else:
-        CloudflareSpeedtest(logger=log).run_all()
+    use_json = "--json" in args
+    results = CloudflareSpeedtest(logger=None if use_json else log).run_all()
+
+    if use_json:
+        log.info(json.dumps({k: v._asdict() for k, v in results.items()}))
 
 
 if __name__ == "__main__":
