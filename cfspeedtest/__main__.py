@@ -23,7 +23,7 @@ def cfspeedtest() -> None:
     results = CloudflareSpeedtest(logger=None if use_json else log).run_all()
 
     if use_json:
-        log.info(json.dumps({k: v._asdict() for k, v in results.items()}))
+        log.info(json.dumps(CloudflareSpeedtest.results_to_dict(results)))
 
 
 if __name__ == "__main__":

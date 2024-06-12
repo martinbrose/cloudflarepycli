@@ -228,3 +228,8 @@ class CloudflareSpeedtest:
             )
 
         return self.results
+
+    @staticmethod
+    def results_to_dict(results: dict[str, TestResult]) -> dict[str, dict]:
+        """Convert the test results to a full dictionary."""
+        return {k: v._asdict() for k, v in results.items()}
