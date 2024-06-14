@@ -222,9 +222,12 @@ class CloudflareSpeedtest:
                 TestResult(int(statistics.mean(speeds))),
             )
         for k, v in data.items():
+            result = None
+            if len(v) > 0:
+                result = int(self.calculate_percentile(v, 0.9))
             self.sprint(
                 f"90th_percentile_{k}_bps",
-                TestResult(int(self.calculate_percentile(v, 0.9))),
+                TestResult(result),
             )
 
         return self.results
