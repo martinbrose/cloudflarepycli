@@ -47,7 +47,7 @@ The `CloudflareSpeedtest` class provides methods to perform various connection
 tests and retrieve relevant information. Here's a brief overview of its main
 methods:
 
-- `run_allt()`: Runs a full suite of tests, including latency, jitter, download,
+- `run_all()`: Runs a full suite of tests, including latency, jitter, download,
   and upload tests. Returns a dictionary with test results.
 - `get_metadata()`: Retrieves information about your IP address, ISP, test
   location, and more.
