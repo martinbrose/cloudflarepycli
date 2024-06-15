@@ -4,12 +4,17 @@ import logging
 from http.client import HTTPConnection
 
 log = logging.getLogger("cfspeedtest")
-log.setLevel(logging.INFO)
-logging.basicConfig(format="%(message)s")
+
+
+def setup_log(*, silent: bool = False) -> None:
+    """Initialise the log."""
+    if not silent:
+        log.setLevel(logging.INFO)
+        logging.basicConfig(format="%(message)s")
 
 
 def set_verbosity(*, debug: bool = False) -> None:
-    """Set whether or not the logger is in debug mode."""
+    """Set the logger to debug mode."""
     if debug:
         HTTPConnection.debuglevel = 1
         log.setLevel(logging.DEBUG)

@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 
 from cfspeedtest.cloudflare import CloudflareSpeedtest
-from cfspeedtest.logger import log, set_verbosity
+from cfspeedtest.logger import log, set_verbosity, setup_log
 from cfspeedtest.version import __version__
 
 
@@ -23,6 +23,7 @@ def cfspeedtest() -> None:
     )
     args = parser.parse_args()
 
+    setup_log(silent=args.json)
     set_verbosity(debug=args.debug)
 
     if args.version:
@@ -33,6 +34,7 @@ def cfspeedtest() -> None:
     results = CloudflareSpeedtest().run_all()
 
     if args.json:
+        setup_log()
         log.info(json.dumps(CloudflareSpeedtest.results_to_dict(results)))
 
 
