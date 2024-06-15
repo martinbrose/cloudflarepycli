@@ -30,7 +30,7 @@ def cfspeedtest() -> None:
         log.debug("Python %s", sys.version)
         sys.exit(0)
 
-    results = CloudflareSpeedtest(logger=None if args.json else log).run_all()
+    results = CloudflareSpeedtest().run_all()
 
     if args.json:
         log.info(json.dumps(CloudflareSpeedtest.results_to_dict(results)))

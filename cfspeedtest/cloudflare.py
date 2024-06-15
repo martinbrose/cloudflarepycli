@@ -6,15 +6,15 @@ This uses endpoints from speed.cloudflare.com.
 
 from __future__ import annotations
 
+import logging
 import statistics
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import Any, NamedTuple
 
 import requests
 
-if TYPE_CHECKING:
-    from logging import Logger
+log = logging.getLogger("cfspeedtest")
 
 
 class TestType(Enum):
@@ -123,7 +123,6 @@ class CloudflareSpeedtest:
         results: dict[str, TestResult] | None = None,
         tests: TestSpecs = DEFAULT_TESTS,
         timeout: tuple[float, float] | float = (3.05, 25),
-        logger: Logger | None = None,
     ) -> None:
         """
         Initialize the test suite.
@@ -144,7 +143,6 @@ class CloudflareSpeedtest:
         self.tests = tests
         self.request_sess = requests.Session()
         self.timeout = timeout
-        self.logger = logger
 
     def metadata(self) -> TestMetadata:
         """Retrieve test location code, IP address, ISP, city, and region."""
@@ -184,8 +182,7 @@ class CloudflareSpeedtest:
 
     def sprint(self, label: str, result: TestResult) -> None:
         """Add an entry to the suite results and log it."""
-        if self.logger:
-            self.logger.info("%s: %s", label, result.value)
+        log.info("%s: %s", label, result.value)
         self.results[label] = result
 
     @staticmethod
