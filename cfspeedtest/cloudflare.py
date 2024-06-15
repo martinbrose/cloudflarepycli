@@ -28,13 +28,14 @@ class TestSpec(NamedTuple):
     """The specifications of an individual test."""
 
     size: int
+    """The size of the test in bytes."""
     iterations: int
     name: str
     type: TestType
 
     @property
     def bits(self) -> int:
-        """Convert the size of the test in bytes to bits."""
+        """The size of the test in bits."""
         return self.size * 8
 
 
@@ -66,17 +67,42 @@ class TestResult(NamedTuple):
 
 
 class TestTimers(NamedTuple):
-    """
-    A collection of test timer collections.
-
-    Here, `full` is the actual time taken to prepare and perform the request,
-    `server` is the time taken to process the request as reported by the worker,
-    and `request` is the internal client time elapsed to complete the request.
-    """
+    """A collection of test timer collections, measured in seconds."""
 
     full: list[float]
+    """The times taken to prepare and perform the requests."""
     server: list[float]
+    """The times taken to process the requests as reported by the worker."""
     request: list[float]
+    """The internal client times elapsed to complete the requests."""
+
+    def to_speeds(self, test: TestSpec) -> list[int]:
+        """Compute the test speeds in bits per second from its type and size."""
+        if test.type == TestType.Up:
+            return [int(test.bits / server_time) for server_time in self.server]
+        return [
+            int(test.bits / (full_time - server_time))
+            for full_time, server_time in zip(self.full, self.server)
+        ]
+
+    def to_latencies(self) -> list[float]:
+        """Compute the test latencies in milliseconds."""
+        return [
+            (request_time - server_time) * 1e3
+            for request_time, server_time in zip(self.request, self.server)
+        ]
+
+    @staticmethod
+    def jitter_from(latencies: list[float]) -> float | None:
+        """Compute jitter as average deviation between consecutive latencies."""
+        if len(latencies) < 2:
+            return None
+        return statistics.median(
+            [
+                abs(latencies[i] - latencies[i - 1])
+                for i in range(1, len(latencies))
+            ]
+        )
 
 
 class TestMetadata(NamedTuple):
@@ -189,33 +215,18 @@ class CloudflareSpeedtest:
             timers = self.run_test(test)
 
             if test.name == "latency":
-                latencies = [
-                    (timers.request[i] - timers.server[i]) * 1e3
-                    for i in range(len(timers.request))
-                ]
-                jitter = statistics.median(
-                    [
-                        abs(latencies[i] - latencies[i - 1])
-                        for i in range(1, len(latencies))
-                    ]
-                )
+                latencies = timers.to_latencies()
+                jitter = timers.jitter_from(latencies)
+                if jitter:
+                    jitter = round(jitter, 2)
                 self.sprint(
                     "latency",
                     TestResult(round(statistics.median(latencies), 2)),
                 )
-                self.sprint("jitter", TestResult(round(jitter, 2)))
+                self.sprint("jitter", TestResult(jitter))
                 continue
 
-            if test.type == TestType.Down:
-                speeds = [
-                    int(test.bits / (timers.full[i] - timers.server[i]))
-                    for i in range(len(timers.full))
-                ]
-            else:
-                speeds = [
-                    int(test.bits / server_time)
-                    for server_time in timers.server
-                ]
+            speeds = timers.to_speeds(test)
             data[test.type.name.lower()].extend(speeds)
             self.sprint(
                 f"{test.name}_{test.type.name.lower()}_bps",
