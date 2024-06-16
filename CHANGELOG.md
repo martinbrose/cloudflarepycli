@@ -17,9 +17,12 @@ All notable changes to this project will be documented in this file.
   - remove thedict, debug, printit, downtests, uptests, latencyreps
   - add results (previously thedict)
   - add tests (previously downtests & uptests) including latency
-  - add logger to enable external logging configuration
 - **BREAKING CHANGE:** change result keys
   - change all results to use bits instead of megabits by default
+    - this can be overriden by using the megabits argument of run_all, which
+      changes the suffix of test keys from "bps" to "mbps" accordingly
+  - metadata is now stored under "meta"
+  - test results are now stored under "tests"
   - "your ip" -> "ip"
   - "your ISP" -> "isp"
   - "test location code" -> "location_code"
