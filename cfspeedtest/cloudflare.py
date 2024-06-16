@@ -128,12 +128,15 @@ def _calculate_percentile(data: list[float], percentile: float) -> float:
     return edges[0] + (edges[1] - edges[0]) * rem
 
 
+SuiteResults = dict[str, dict[str, TestResult]]
+
+
 class CloudflareSpeedtest:
     """Suite of speedtests."""
 
     def __init__(  # noqa: D417
         self,
-        results: dict[str, TestResult] | None = None,
+        results: SuiteResults | None = None,
         tests: TestSpecs = DEFAULT_TESTS,
         timeout: tuple[float, float] | float = (3.05, 25),
     ) -> None:
@@ -153,6 +156,9 @@ class CloudflareSpeedtest:
 
         """
         self.results = results or {}
+        self.results.setdefault("tests", {})
+        self.results.setdefault("meta", {})
+
         self.tests = tests
         self.request_sess = requests.Session()
         self.timeout = timeout
@@ -193,19 +199,22 @@ class CloudflareSpeedtest:
             )
         return coll
 
-    def _sprint(self, label: str, result: TestResult) -> None:
+    def _sprint(
+        self, label: str, result: TestResult, *, meta: bool = False
+    ) -> None:
         """Add an entry to the suite results and log it."""
         log.info("%s: %s", label, result.value)
-        self.results[label] = result
+        save_to = self.results["meta"] if meta else self.results["tests"]
+        save_to[label] = result
 
-    def run_all(self) -> dict[str, TestResult]:
+    def run_all(self, *, megabits: bool = False) -> SuiteResults:
         """Run the full test suite."""
         meta = self.metadata()
-        self._sprint("ip", TestResult(meta.ip))
+        self._sprint("ip", TestResult(meta.ip), meta=True)
         self._sprint("isp", TestResult(meta.isp))
-        self._sprint("location_code", TestResult(meta.location_code))
-        self._sprint("location_city", TestResult(meta.city))
-        self._sprint("location_region", TestResult(meta.region))
+        self._sprint("location_code", TestResult(meta.location_code), meta=True)
+        self._sprint("location_city", TestResult(meta.city), meta=True)
+        self._sprint("location_region", TestResult(meta.region), meta=True)
 
         data = {"down": [], "up": []}
         for test in self.tests:
@@ -225,22 +234,39 @@ class CloudflareSpeedtest:
 
             speeds = timers.to_speeds(test)
             data[test.type.name.lower()].extend(speeds)
+            # TODO: reduce code duplication of megabits reporting
+            mean_speed = int(statistics.mean(speeds))
+            label_suffix = "bps"
+            if megabits:
+                mean_speed = round(mean_speed / 1e6, 2)
+                label_suffix = "mbps"
             self._sprint(
-                f"{test.name}_{test.type.name.lower()}_bps",
-                TestResult(int(statistics.mean(speeds))),
+                f"{test.name}_{test.type.name.lower()}_{label_suffix}",
+                TestResult(mean_speed),
             )
+
         for k, v in data.items():
             result = None
             if len(v) > 0:
                 result = int(_calculate_percentile(v, 0.9))
+            label_suffix = "bps"
+            if megabits:
+                result = round(result / 1e6, 2) if result else result
+                label_suffix = "mbps"
             self._sprint(
-                f"90th_percentile_{k}_bps",
+                f"90th_percentile_{k}_{label_suffix}",
                 TestResult(result),
             )
 
         return self.results
 
     @staticmethod
-    def results_to_dict(results: dict[str, TestResult]) -> dict[str, dict]:
+    def results_to_dict(
+        results: SuiteResults,
+    ) -> dict[str, dict[str, dict[str, float]]]:
         """Convert the test results to a full dictionary."""
-        return {k: v._asdict() for k, v in results.items()}
+        return {
+            k: {sk: sv._asdict()}
+            for k, v in results.items()
+            for sk, sv in v.items()
+        }

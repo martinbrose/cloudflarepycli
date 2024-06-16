@@ -17,6 +17,11 @@ def cfspeedtest() -> None:
         "--json", action="store_true", help="Write JSON to stdout."
     )
     parser.add_argument(
+        "--bps",
+        action="store_true",
+        help="Show output in bits per second.",
+    )
+    parser.add_argument(
         "--version",
         action="store_true",
         help="Show program's version and exit.",
@@ -31,7 +36,7 @@ def cfspeedtest() -> None:
         log.debug("Python %s", sys.version)
         sys.exit(0)
 
-    results = CloudflareSpeedtest().run_all()
+    results = CloudflareSpeedtest().run_all(megabits=not args.bps)
 
     if args.json:
         setup_log()
