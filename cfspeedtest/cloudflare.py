@@ -115,6 +115,19 @@ class TestMetadata(NamedTuple):
     city: str
 
 
+def _calculate_percentile(data: list[float], percentile: float) -> float:
+    """Find the percentile of a list of values."""
+    data = sorted(data)
+    idx = (len(data) - 1) * percentile
+    rem = idx % 1
+
+    if rem == 0:
+        return data[int(idx)]
+
+    edges = (data[int(idx)], data[int(idx) + 1])
+    return edges[0] + (edges[1] - edges[0]) * rem
+
+
 class CloudflareSpeedtest:
     """Suite of speedtests."""
 
@@ -180,32 +193,19 @@ class CloudflareSpeedtest:
             )
         return coll
 
-    def sprint(self, label: str, result: TestResult) -> None:
+    def _sprint(self, label: str, result: TestResult) -> None:
         """Add an entry to the suite results and log it."""
         log.info("%s: %s", label, result.value)
         self.results[label] = result
 
-    @staticmethod
-    def calculate_percentile(data: list[float], percentile: float) -> float:
-        """Find the percentile of a list of values."""
-        data = sorted(data)
-        idx = (len(data) - 1) * percentile
-        rem = idx % 1
-
-        if rem == 0:
-            return data[int(idx)]
-
-        edges = (data[int(idx)], data[int(idx) + 1])
-        return edges[0] + (edges[1] - edges[0]) * rem
-
     def run_all(self) -> dict[str, TestResult]:
         """Run the full test suite."""
         meta = self.metadata()
-        self.sprint("ip", TestResult(meta.ip))
-        self.sprint("isp", TestResult(meta.isp))
-        self.sprint("location_code", TestResult(meta.location_code))
-        self.sprint("location_city", TestResult(meta.city))
-        self.sprint("location_region", TestResult(meta.region))
+        self._sprint("ip", TestResult(meta.ip))
+        self._sprint("isp", TestResult(meta.isp))
+        self._sprint("location_code", TestResult(meta.location_code))
+        self._sprint("location_city", TestResult(meta.city))
+        self._sprint("location_region", TestResult(meta.region))
 
         data = {"down": [], "up": []}
         for test in self.tests:
@@ -216,24 +216,24 @@ class CloudflareSpeedtest:
                 jitter = timers.jitter_from(latencies)
                 if jitter:
                     jitter = round(jitter, 2)
-                self.sprint(
+                self._sprint(
                     "latency",
                     TestResult(round(statistics.median(latencies), 2)),
                 )
-                self.sprint("jitter", TestResult(jitter))
+                self._sprint("jitter", TestResult(jitter))
                 continue
 
             speeds = timers.to_speeds(test)
             data[test.type.name.lower()].extend(speeds)
-            self.sprint(
+            self._sprint(
                 f"{test.name}_{test.type.name.lower()}_bps",
                 TestResult(int(statistics.mean(speeds))),
             )
         for k, v in data.items():
             result = None
             if len(v) > 0:
-                result = int(self.calculate_percentile(v, 0.9))
-            self.sprint(
+                result = int(_calculate_percentile(v, 0.9))
+            self._sprint(
                 f"90th_percentile_{k}_bps",
                 TestResult(result),
             )
