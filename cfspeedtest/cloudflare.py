@@ -97,7 +97,7 @@ class TestTimers(NamedTuple):
         """Compute jitter as average deviation between consecutive latencies."""
         if len(latencies) < 2:
             return None
-        return statistics.median(
+        return statistics.mean(
             [
                 abs(latencies[i] - latencies[i - 1])
                 for i in range(1, len(latencies))
@@ -218,7 +218,7 @@ class CloudflareSpeedtest:
                     jitter = round(jitter, 2)
                 self._sprint(
                     "latency",
-                    TestResult(round(statistics.median(latencies), 2)),
+                    TestResult(round(statistics.mean(latencies), 2)),
                 )
                 self._sprint("jitter", TestResult(jitter))
                 continue
