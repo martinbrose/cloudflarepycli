@@ -33,6 +33,8 @@ getcolo, getcolodetails, and getisp deprecated but left functional
 version 1.8.1 (courtesey of Martin Brose)
 removed numpy dependencies to reduce footprint in docker environments
 
+version 1.8.2
+changed cloudflare endpoint URLs to use https
 
 @author: /tevslin
 """
@@ -43,6 +45,7 @@ class cloudflare:
     downloadtests=((101000, 10,'100kB'),(1001000, 8,'1MB'),(10001000, 6,'10MB'),(25001000, 4,'25MB'))
     version="1.8.0" #7/1/23
     version="1.8.1" #8/17/23
+    version="1.8.2" #6/18/24
     def __init__(self,thedict=None,debug=False,printit=True,downtests=None,uptests=None,latencyreps=20,timeout=(3.05,25)):
 
         import requests
@@ -99,7 +102,7 @@ class cloudflare:
     
     def getfulldata(self):
     # retrieves cloudflare colo, user ip address, ISP, city, and region
-        r=self.mequests.get('http://speed.cloudflare.com/meta')       
+        r=self.mequests.get('https://speed.cloudflare.com/meta')       
         dicty=r.json()
         return dicty['colo'],dicty['clientIp'],dicty['asOrganization'],dicty['region'],dicty['city']
 
@@ -122,7 +125,7 @@ class cloudflare:
                 start=time.time()
                 err=False
                 try: 
-                    r=self.mequests.get('http://speed.cloudflare.com/__down?bytes='+str(numbytes),timeout=self.timeout)
+                    r=self.mequests.get('https://speed.cloudflare.com/__down?bytes='+str(numbytes),timeout=self.timeout)
                     end=time.time()
                 except:
                     err=True
@@ -139,7 +142,7 @@ class cloudflare:
         for i in range(iterations):
             err=False
             try: 
-                r=self.mequests.post('http://speed.cloudflare.com/__up',data=thedata,timeout=self.timeout)
+                r=self.mequests.post('https://speed.cloudflare.com/__up',data=thedata,timeout=self.timeout)
             except:
                 err=True
             if not err:
