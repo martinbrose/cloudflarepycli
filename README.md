@@ -18,15 +18,18 @@ Windows users must also: pip install wres
 
 ## CLI usage
 
-Type 'cfspeedtest' in the environment where you installed the package. Note that
+Type `cfspeedtest` in the environment where you installed the package. Note that
 this is a shell command, not a Python command.
 
 ### Options
 
+```
   --debug     log network io
   --json      write json to stdout instead of formatted results
+  --bps       Show output in bits per second
   --version   show program's version number and exit
-  
+```
+
 ## Cloudflare Documentation
 
 The `CloudflareSpeedtest` Class is a Python module that facilitates testing the
