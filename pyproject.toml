@@ -1,8 +1,8 @@
 [project]
 name = "cloudflarepycli"
-version = "2.0.0"
+version = "2.0.1"
 description = "Python CLI and utiltiies for retrieving network performance statistics."
-authors = [{ name = "Tom Evslin", email = "tevslin@gmail.com"}]
+authors = [{ name = "Tom Evslin", email = "tevslin@gmail.com"}, { name = "Martin Brose", email = "nitramesorb@gmail.com"}]
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
@@ -15,8 +15,8 @@ classifiers = [
 dependencies = ["requests>=2.32.3"]
 
 [project.urls]
-Homepage = "https://github.com/tevslin/cloudflarepycli"
-Issues = "https://github.com/cloudflarepycli/issues"
+Homepage = "https://github.com/martinbrose/cloudflarepycli"
+Issues = "https://github.com/martinbrose/cloudflarepycli/issues"
 
 [project.scripts]
 cfspeedtest = "cfspeedtest.__main__:cfspeedtest"
