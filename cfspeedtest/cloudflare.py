@@ -138,7 +138,7 @@ class CloudflareSpeedtest:
         self,
         results: SuiteResults | None = None,
         tests: TestSpecs = DEFAULT_TESTS,
-        timeout: tuple[float, float] | float = (3.05, 25),
+        timeout: tuple[float, float] | float = (10, 25),
     ) -> None:
         """
         Initialize the test suite.
