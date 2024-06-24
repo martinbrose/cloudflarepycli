@@ -11,6 +11,7 @@ import statistics
 import time
 from collections import UserDict
 from enum import Enum
+from itertools import pairwise
 from typing import Any, NamedTuple
 
 import requests
@@ -98,12 +99,7 @@ class TestTimers(NamedTuple):
         """Compute jitter as average deviation between consecutive latencies."""
         if len(latencies) < 2:
             return None
-        return statistics.mean(
-            [
-                abs(latencies[i] - latencies[i - 1])
-                for i in range(1, len(latencies))
-            ]
-        )
+        return statistics.mean([abs(b - a) for a, b in pairwise(latencies)])
 
 
 class TestMetadata(NamedTuple):
