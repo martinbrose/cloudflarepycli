@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import statistics
 import time
+from collections import UserDict
 from enum import Enum
 from typing import Any, NamedTuple
 
@@ -128,7 +129,52 @@ def _calculate_percentile(data: list[float], percentile: float) -> float:
     return edges[0] + (edges[1] - edges[0]) * rem
 
 
-SuiteResults = dict[str, dict[str, TestResult]]
+def bits_to_megabits(bits: int) -> float:
+    """Convert bits to megabits, rounded to 2 decimal places."""
+    return round(bits / 1e6, 2)
+
+
+class SuiteResults(UserDict):
+    """The results of a test suite."""
+
+    def __init__(self, *, megabits: bool = False):
+        super().__init__()
+        self.setdefault("tests", {})
+        self._megabits = megabits
+
+    @property
+    def meta(self) -> TestMetadata:
+        return self["meta"]
+
+    @meta.setter
+    def meta(self, value: TestMetadata) -> None:
+        self["meta"] = value
+        for meta_field, meta_value in value._asdict().items():
+            log.info("%s: %s", meta_field, meta_value)
+
+    @property
+    def tests(self) -> dict[str, TestResult]:
+        return self["tests"]
+
+    def add_test(self, label: str, result: TestResult):
+        self.tests[label] = result
+        log.info("%s: %s", label, result.value)
+
+    @property
+    def percentile_90th_down_bps(self) -> TestResult:
+        return self["90th_percentile_down_bps"]
+
+    @property
+    def percentile_90th_up_bps(self) -> TestResult:
+        return self["90th_percentile_up_bps"]
+
+    def to_full_dict(self) -> dict:
+        return {
+            "meta": self.meta._asdict(),
+            "tests": {k: v._asdict() for k, v in self.tests.items()},
+            "90th_percentile_down_bps": self.percentile_90th_down_bps,
+            "90th_percentile_up_bps": self.percentile_90th_up_bps,
+        }
 
 
 class CloudflareSpeedtest:
@@ -155,10 +201,7 @@ class CloudflareSpeedtest:
         no logging will occur.
 
         """
-        self.results = results or {}
-        self.results.setdefault("tests", {})
-        self.results.setdefault("meta", {})
-
+        self.results = results or SuiteResults()
         self.tests = tests
         self.request_sess = requests.Session()
         self.timeout = timeout
@@ -199,74 +242,42 @@ class CloudflareSpeedtest:
             )
         return coll
 
-    def _sprint(
-        self, label: str, result: TestResult, *, meta: bool = False
-    ) -> None:
-        """Add an entry to the suite results and log it."""
-        log.info("%s: %s", label, result.value)
-        save_to = self.results["meta"] if meta else self.results["tests"]
-        save_to[label] = result
+    def run_test_latency(self, test: TestSpec) -> None:
+        """Run a test specification and collect latency results."""
+        timers = self.run_test(test)
+        latencies = timers.to_latencies()
+        jitter = timers.jitter_from(latencies)
+        if jitter:
+            jitter = round(jitter, 2)
+        self.results.add_test(
+            "latency", TestResult(round(statistics.mean(latencies), 2))
+        )
+        self.results.add_test("jitter", TestResult(jitter))
 
-    def run_all(self, *, megabits: bool = False) -> SuiteResults:
+    def run_test_speed(self, test: TestSpec) -> list[int]:
+        """Run a test specification and collect speed results."""
+        speeds = self.run_test(test).to_speeds(test)
+        self.results.add_test(
+            f"{test.name}_{test.type.name.lower()}_bps",
+            TestResult(int(statistics.mean(speeds))),
+        )
+        return speeds
+
+    def run_all(self) -> SuiteResults:
         """Run the full test suite."""
-        meta = self.metadata()
-        self._sprint("ip", TestResult(meta.ip), meta=True)
-        self._sprint("isp", TestResult(meta.isp))
-        self._sprint("location_code", TestResult(meta.location_code), meta=True)
-        self._sprint("location_city", TestResult(meta.city), meta=True)
-        self._sprint("location_region", TestResult(meta.region), meta=True)
+        self.results.meta = self.metadata()
 
         data = {"down": [], "up": []}
         for test in self.tests:
-            timers = self.run_test(test)
-
             if test.name == "latency":
-                latencies = timers.to_latencies()
-                jitter = timers.jitter_from(latencies)
-                if jitter:
-                    jitter = round(jitter, 2)
-                self._sprint(
-                    "latency",
-                    TestResult(round(statistics.mean(latencies), 2)),
-                )
-                self._sprint("jitter", TestResult(jitter))
+                self.run_test_latency(test)
                 continue
-
-            speeds = timers.to_speeds(test)
-            data[test.type.name.lower()].extend(speeds)
-            # TODO: reduce code duplication of megabits reporting
-            mean_speed = int(statistics.mean(speeds))
-            label_suffix = "bps"
-            if megabits:
-                mean_speed = round(mean_speed / 1e6, 2)
-                label_suffix = "mbps"
-            self._sprint(
-                f"{test.name}_{test.type.name.lower()}_{label_suffix}",
-                TestResult(mean_speed),
-            )
+            data[test.type.name.lower()].extend(self.run_test_speed(test))
 
         for k, v in data.items():
             result = None
             if len(v) > 0:
                 result = int(_calculate_percentile(v, 0.9))
-            label_suffix = "bps"
-            if megabits:
-                result = round(result / 1e6, 2) if result else result
-                label_suffix = "mbps"
-            self._sprint(
-                f"90th_percentile_{k}_{label_suffix}",
-                TestResult(result),
-            )
+            self.results[f"90th_percentile_{k}_bps"] = TestResult(result)
 
         return self.results
-
-    @staticmethod
-    def results_to_dict(
-        results: SuiteResults,
-    ) -> dict[str, dict[str, dict[str, float]]]:
-        """Convert the test results to a full dictionary."""
-        return {
-            k: {sk: sv._asdict()}
-            for k, v in results.items()
-            for sk, sv in v.items()
-        }

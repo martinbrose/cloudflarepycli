@@ -28,7 +28,7 @@ def cfspeedtest() -> None:
     )
     args = parser.parse_args()
 
-    setup_log(silent=args.json)
+    setup_log(silent=args.json and not args.version)
     set_verbosity(debug=args.debug)
 
     if args.version:
@@ -36,11 +36,11 @@ def cfspeedtest() -> None:
         log.debug("Python %s", sys.version)
         sys.exit(0)
 
-    results = CloudflareSpeedtest().run_all(megabits=not args.bps)
+    results = CloudflareSpeedtest().run_all()
 
     if args.json:
         setup_log()
-        log.info(json.dumps(CloudflareSpeedtest.results_to_dict(results)))
+        log.info(json.dumps(results.to_full_dict()))
 
 
 if __name__ == "__main__":
