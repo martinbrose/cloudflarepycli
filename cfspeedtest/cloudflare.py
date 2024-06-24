@@ -238,17 +238,17 @@ class CloudflareSpeedtest:
             )
         return coll
 
-    def run_test_latency(self, test: TestSpec) -> None:
+    def run_test_latency(self, test: TestSpec) -> tuple[float, float | None]:
         """Run a test specification and collect latency results."""
         timers = self.run_test(test)
         latencies = timers.to_latencies()
         jitter = timers.jitter_from(latencies)
         if jitter:
             jitter = round(jitter, 2)
-        self.results.add_test(
-            "latency", TestResult(round(statistics.mean(latencies), 2))
-        )
+        latency = round(statistics.mean(latencies), 2)
+        self.results.add_test("latency", TestResult(latency))
         self.results.add_test("jitter", TestResult(jitter))
+        return (latency, jitter)
 
     def run_test_speed(self, test: TestSpec) -> list[int]:
         """Run a test specification and collect speed results."""
