@@ -1,0 +1,38 @@
+name: "CI: Lint & Test"
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[INIT] Checkout project"
+        uses: actions/checkout@v4
+      - name: "[EXEC] Lint"
+        uses: chartboost/ruff-action@v1
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy3.9", "pypy3.10"]
+        os: [ubuntu-latest, macos-12, windows-latest]
+    steps:
+      - name: "[INIT] Checkout project"
+        uses: actions/checkout@v4
+      - name: "[INIT] Install Python ${{ matrix.python }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: "[INIT] Install Pytest"
+        run: pip install pytest pytest-cov
+      - name: "[EXEC] Test"
+        run: pytest tests 
+        # TODO: add coverage?
