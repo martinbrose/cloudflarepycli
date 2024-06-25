@@ -128,6 +128,16 @@ def _calculate_percentile(data: list[float], percentile: float) -> float:
     return edges[0] + (edges[1] - edges[0]) * rem
 
 
+def _with_units(
+    base_label: str, value: float, *, megabits: bool
+) -> tuple[str, TestResult]:
+    """Append a unit suffix to a `base_label` and convert the `value`."""
+    suffix = "mbps" if megabits else "bps"
+    if megabits:
+        value = round(value / 1e6, 2)
+    return (f"{base_label}_{suffix}", TestResult(value))
+
+
 SuiteResults = dict[str, dict[str, TestResult]]
 
 
@@ -234,28 +244,24 @@ class CloudflareSpeedtest:
 
             speeds = timers.to_speeds(test)
             data[test.type.name.lower()].extend(speeds)
-            # TODO: reduce code duplication of megabits reporting
-            mean_speed = int(statistics.mean(speeds))
-            label_suffix = "bps"
-            if megabits:
-                mean_speed = round(mean_speed / 1e6, 2)
-                label_suffix = "mbps"
             self._sprint(
-                f"{test.name}_{test.type.name.lower()}_{label_suffix}",
-                TestResult(mean_speed),
+                *_with_units(
+                    f"{test.name}_{test.type.name.lower()}",
+                    int(statistics.mean(speeds)),
+                    megabits=megabits,
+                )
             )
 
         for k, v in data.items():
             result = None
             if len(v) > 0:
                 result = int(_calculate_percentile(v, 0.9))
-            label_suffix = "bps"
-            if megabits:
-                result = round(result / 1e6, 2) if result else result
-                label_suffix = "mbps"
+            label, value = _with_units(
+                f"90th_percentile_{k}", result or 0, megabits=megabits
+            )
             self._sprint(
-                f"90th_percentile_{k}_{label_suffix}",
-                TestResult(result),
+                label,
+                value if result else TestResult(None),
             )
 
         return self.results
