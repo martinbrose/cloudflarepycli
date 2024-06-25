@@ -192,7 +192,7 @@ class CloudflareSpeedtest:
             )
             coll.full.append(time.time() - start)
             coll.server.append(
-                float(r.headers["Server-Timing"].split("=")[1]) / 1e3
+                float(r.headers["Server-Timing"].split("=")[1].split(",")[0]) / 1e3
             )
             coll.request.append(
                 r.elapsed.seconds + r.elapsed.microseconds / 1e6
