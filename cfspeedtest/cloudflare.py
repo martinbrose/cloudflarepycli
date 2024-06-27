@@ -40,6 +40,11 @@ class TestSpec(NamedTuple):
         """The size of the test in bits."""
         return self.size * 8
 
+    @property
+    def label(self) -> str:
+        """The output label for the test."""
+        return f"{self.name}_{self.type.name.lower()}"
+
 
 TestSpecs = tuple[TestSpec, ...]
 
@@ -270,7 +275,7 @@ class CloudflareSpeedtest:
         """Run a test specification and collect speed results."""
         speeds = self.run_test(test).to_speeds(test)
         self.results.add_test(
-            f"{test.name}_{test.type.name.lower()}",
+            test.label,
             TestResult(int(statistics.mean(speeds))),
         )
         return speeds
