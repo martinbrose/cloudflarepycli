@@ -188,8 +188,8 @@ class SuiteResults(UserDict):
             "megabits": self._megabits,
             "meta": self.meta._asdict(),
             "tests": {k: v._asdict() for k, v in self.tests.items()},
-            "90th_percentile_down": self.percentile_90th_down,
-            "90th_percentile_up": self.percentile_90th_up,
+            "90th_percentile_down": self.percentile_90th_down._asdict(),
+            "90th_percentile_up": self.percentile_90th_up._asdict(),
         }
 
 
