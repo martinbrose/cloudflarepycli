@@ -4,7 +4,7 @@ import json
 import sys
 from argparse import ArgumentParser
 
-from cfspeedtest.cloudflare import CloudflareSpeedtest
+from cfspeedtest.cloudflare import CloudflareSpeedtest, SuiteResults
 from cfspeedtest.logger import log, set_verbosity, setup_log
 from cfspeedtest.version import __version__
 
@@ -36,7 +36,7 @@ def cfspeedtest() -> None:
         log.debug("Python %s", sys.version)
         sys.exit(0)
 
-    results = CloudflareSpeedtest().run_all()
+    results = CloudflareSpeedtest(SuiteResults(megabits=not args.bps)).run_all()
 
     if args.json:
         setup_log()

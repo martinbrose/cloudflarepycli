@@ -137,6 +137,7 @@ class SuiteResults(UserDict):
         super().__init__()
         self.setdefault("tests", {})
         self._megabits = megabits
+        log.info("megabits: %s", self._megabits)
 
     @property
     def meta(self) -> TestMetadata:
@@ -146,30 +147,44 @@ class SuiteResults(UserDict):
     def meta(self, value: TestMetadata) -> None:
         self["meta"] = value
         for meta_field, meta_value in value._asdict().items():
-            log.info("%s: %s", meta_field, meta_value)
+            log.info("meta.%s: %s", meta_field, meta_value)
 
     @property
     def tests(self) -> dict[str, TestResult]:
         return self["tests"]
 
-    def add_test(self, label: str, result: TestResult):
+    def add_test(self, label: str, result: TestResult) -> None:
+        if (
+            self._megabits
+            and result.value is not None
+            and label not in {"latency", "jitter"}
+        ):
+            result = TestResult(bits_to_megabits(result.value), result.time)
         self.tests[label] = result
+        log.info("tests.%s: %s", label, result.value)
+
+    def add_90th(self, test_type: TestType, result: TestResult) -> None:
+        if self._megabits and result.value is not None:
+            result = TestResult(bits_to_megabits(result.value), result.time)
+        label = f"90th_percentile_{test_type.name.lower()}"
+        self[label] = result
         log.info("%s: %s", label, result.value)
 
     @property
-    def percentile_90th_down_bps(self) -> TestResult:
-        return self["90th_percentile_down_bps"]
+    def percentile_90th_down(self) -> TestResult:
+        return self["90th_percentile_down"]
 
     @property
-    def percentile_90th_up_bps(self) -> TestResult:
-        return self["90th_percentile_up_bps"]
+    def percentile_90th_up(self) -> TestResult:
+        return self["90th_percentile_up"]
 
     def to_full_dict(self) -> dict:
         return {
+            "megabits": self._megabits,
             "meta": self.meta._asdict(),
             "tests": {k: v._asdict() for k, v in self.tests.items()},
-            "90th_percentile_down_bps": self.percentile_90th_down_bps,
-            "90th_percentile_up_bps": self.percentile_90th_up_bps,
+            "90th_percentile_down": self.percentile_90th_down,
+            "90th_percentile_up": self.percentile_90th_up,
         }
 
 
@@ -231,7 +246,8 @@ class CloudflareSpeedtest:
             )
             coll.full.append(time.time() - start)
             coll.server.append(
-                float(r.headers["Server-Timing"].split("=")[1].split(",")[0]) / 1e3
+                float(r.headers["Server-Timing"].split("=")[1].split(",")[0])
+                / 1e3
             )
             coll.request.append(
                 r.elapsed.seconds + r.elapsed.microseconds / 1e6
@@ -254,7 +270,7 @@ class CloudflareSpeedtest:
         """Run a test specification and collect speed results."""
         speeds = self.run_test(test).to_speeds(test)
         self.results.add_test(
-            f"{test.name}_{test.type.name.lower()}_bps",
+            f"{test.name}_{test.type.name.lower()}",
             TestResult(int(statistics.mean(speeds))),
         )
         return speeds
@@ -263,17 +279,17 @@ class CloudflareSpeedtest:
         """Run the full test suite."""
         self.results.meta = self.metadata()
 
-        data = {"down": [], "up": []}
+        data = {TestType.Down: [], TestType.Up: []}
         for test in self.tests:
             if test.name == "latency":
                 self.run_test_latency(test)
                 continue
-            data[test.type.name.lower()].extend(self.run_test_speed(test))
+            data[test.type].extend(self.run_test_speed(test))
 
         for k, v in data.items():
             result = None
             if len(v) > 0:
                 result = int(_calculate_percentile(v, 0.9))
-            self.results[f"90th_percentile_{k}_bps"] = TestResult(result)
+            self.results.add_90th(k, TestResult(result))
 
         return self.results
