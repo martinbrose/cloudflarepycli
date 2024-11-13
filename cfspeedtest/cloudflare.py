@@ -108,11 +108,11 @@ class TestTimers(NamedTuple):
 class TestMetadata(NamedTuple):
     """The metadata of a test suite."""
 
-    ip: str
-    isp: str
-    location_code: str
-    region: str
-    city: str
+    ip: Optional[str]
+    isp: Optional[str]
+    location_code: Optional[str]
+    region: Optional[str]
+    city: Optional[str]
 
 
 def _calculate_percentile(data: list[float], percentile: float) -> float:
