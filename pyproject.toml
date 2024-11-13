@@ -1,11 +1,11 @@
 [project]
 name = "cloudflarepycli"
-version = "2.0.2"
+version = "2.1.0"
 description = "Python CLI and utiltiies for retrieving network performance statistics."
 authors = [{ name = "Tom Evslin", email = "tevslin@gmail.com"}, { name = "Martin Brose", email = "nitramesorb@gmail.com"}]
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["speedtest", "cloudflare", "latency", "jitter"]
 classifiers = [
   "Programming Language :: Python :: 3",
