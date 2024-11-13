@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+# cloudflarepycli@2.1.0
+
+## Change
+
+- test metadata is now treated as optional to ensure a speedtest is not failing
+
 # cloudflarepycli@2.0.0
 
 ## Refactor
