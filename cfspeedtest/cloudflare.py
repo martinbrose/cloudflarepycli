@@ -179,11 +179,11 @@ class CloudflareSpeedtest:
             "https://speed.cloudflare.com/meta"
         ).json()
         return TestMetadata(
-            result_data["clientIp"],
-            result_data["asOrganization"],
-            result_data["colo"],
-            result_data["region"],
-            result_data["city"],
+            result_data.get("clientIp"),
+            result_data.get("asOrganization"),
+            result_data.get("colo"),
+            result_data.get("region"),
+            result_data.get("city"),
         )
 
     def run_test(self, test: TestSpec) -> TestTimers:
