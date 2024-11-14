@@ -7,6 +7,7 @@ This uses endpoints from speed.cloudflare.com.
 from __future__ import annotations
 
 import logging
+import re
 import statistics
 import time
 from enum import Enum
@@ -15,6 +16,8 @@ from typing import Any, NamedTuple
 import requests
 
 log = logging.getLogger("cfspeedtest")
+
+TIMING_DURATION_RE = re.compile(r"dur=([0-9.]+)")
 
 
 class TestType(Enum):
@@ -201,9 +204,8 @@ class CloudflareSpeedtest:
                 test.type.value, url, data=data, timeout=self.timeout
             )
             coll.full.append(time.time() - start)
-            coll.server.append(
-                float(r.headers["Server-Timing"].split("=")[1].split(",")[0]) / 1e3
-            )
+            timing_match = TIMING_DURATION_RE.search(r.headers["Server-Timing"])
+            coll.server.append(float(timing_match.group(1)) / 1e3)
             coll.request.append(
                 r.elapsed.seconds + r.elapsed.microseconds / 1e6
             )
