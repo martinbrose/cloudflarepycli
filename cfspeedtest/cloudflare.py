@@ -171,6 +171,11 @@ class CloudflareSpeedtest:
 
         self.tests = tests
         self.request_sess = requests.Session()
+        custom_headers = {
+            "Referer": "https://speed.cloudflare.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+        }
+        self.request_sess.headers.update(custom_headers)
         self.timeout = timeout
 
     def metadata(self) -> TestMetadata:
