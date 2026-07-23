@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+# cloudflarepycli@2.1.6-rc
+
+## Change
+
+- Fix incorrect upload speed calculation. The Cloudflare Speed Test __up endpoint now returns a new response header: cf-meta-upload-bytes — the actual number of bytes the server accepted for the upload (in bytes).
+
+# cloudflarepycli@2.1.5-rc
+
+## Change
+
+- fix: Return 0.0 and log a debug message when the Server-Timing header lacks a valid duration, instead of raising a ValueError.
+
+# cloudflarepycli@2.1.4-rc
+
+## Change
+
+- feat: Enhance `Server-Timing` header parsing for robustness and add checks for empty test samples.
+
+# cloudflarepycli@2.1.3-rc
+
+## Change
+
+- Fix ZeroDivisionError
+
+# cloudflarepycli@2.1.2-rc
+
+## Change
+
+- fix response timing processing
+
+# cloudflarepycli@2.1.1-rc
+
+## Change
+
+- add referer header to fix 400 error
+
 # cloudflarepycli@2.1.0
 
 ## Change

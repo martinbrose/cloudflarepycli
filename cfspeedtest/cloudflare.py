@@ -14,6 +14,8 @@ from typing import Any, NamedTuple
 
 import requests
 
+from cfspeedtest.version import __version__
+
 log = logging.getLogger("cfspeedtest")
 
 
@@ -75,14 +77,30 @@ class TestTimers(NamedTuple):
     """The times taken to process the requests as reported by the worker."""
     request: list[float]
     """The internal client times elapsed to complete the requests."""
+    upload_bytes: list[int] | None = None
+    """Per-iteration server-accepted upload bytes from cf-meta-upload-bytes."""
 
     def to_speeds(self, test: TestSpec) -> list[int]:
-        """Compute the test speeds in bits per second from its type and size."""
+        """Compute the test speeds in bits per second from its type and size.
+
+        For uploads, uses the server-accepted byte count from the
+        cf-meta-upload-bytes response header when available, falling back to
+        the requested payload size.
+        """
         if test.type == TestType.Up:
-            return [int(test.bits / server_time) for server_time in self.server]
+            return [
+                int((ub * 8 if ub else test.bits) / st)
+                if st > 0
+                else int((ub * 8 if ub else test.bits) / max(ft, 1e-6))
+                for st, ft, ub in zip(
+                    self.server,
+                    self.full,
+                    self.upload_bytes or [None] * len(self.server),
+                )
+            ]
         return [
-            int(test.bits / (full_time - server_time))
-            for full_time, server_time in zip(self.full, self.server)
+            int(test.bits / (ft - st)) if (ft - st) > 0 else int(test.bits / max(ft, 1e-6))
+            for ft, st in zip(self.full, self.server)
         ]
 
     def to_latencies(self) -> list[float]:
@@ -171,13 +189,53 @@ class CloudflareSpeedtest:
 
         self.tests = tests
         self.request_sess = requests.Session()
+        self.request_sess.headers.update(
+            {
+                "Referer": "https://speed.cloudflare.com/",
+                "User-Agent": f"cloudflarepycli/{__version__}",
+            }
+        )
         self.timeout = timeout
+
+    @staticmethod
+    def _parse_server_timing(header_value: str) -> float:
+        """Parse the server timing header into seconds."""
+        worker_dur: float | None = None
+        fallback_dur: float | None = None
+        metrics = [m.strip() for m in header_value.split(",") if m.strip()]
+        for metric in metrics:
+            metric_name = metric.split(";")[0].strip().lower()
+            params = [p.strip() for p in metric.split(";") if p.strip()]
+            for param in params:
+                if "=" not in param:
+                    continue
+                name, value = param.split("=", 1)
+                if name.strip().lower() == "dur":
+                    try:
+                        clean_value = value.strip().strip('"').strip("'")
+                        dur = float(clean_value) / 1e3
+                    except (ValueError, TypeError):
+                        continue
+                    if metric_name == "cfSpeedWorker":
+                        worker_dur = dur
+                    fallback_dur = dur
+        if worker_dur is not None:
+            return worker_dur
+        if fallback_dur is not None:
+            return fallback_dur
+        log.debug(
+            "Server-Timing header did not include a valid duration: %s. Falling back to 0.0",
+            header_value,
+        )
+        return 0.0
 
     def metadata(self) -> TestMetadata:
         """Retrieve test location code, IP address, ISP, city, and region."""
-        result_data: dict[str, str] = self.request_sess.get(
-            "https://speed.cloudflare.com/meta"
-        ).json()
+        response = self.request_sess.get(
+            "https://speed.cloudflare.com/meta", timeout=self.timeout
+        )
+        response.raise_for_status()
+        result_data: dict[str, str] = response.json()
         return TestMetadata(
             result_data.get("clientIp"),
             result_data.get("asOrganization"),
@@ -189,6 +247,7 @@ class CloudflareSpeedtest:
     def run_test(self, test: TestSpec) -> TestTimers:
         """Run a test specification iteratively and collect timers."""
         coll = TestTimers([], [], [])
+        upload_bytes: list[int] = []
         url = f"https://speed.cloudflare.com/__down?bytes={test.size}"
         data = None
         if test.type == TestType.Up:
@@ -200,14 +259,47 @@ class CloudflareSpeedtest:
             r = self.request_sess.request(
                 test.type.value, url, data=data, timeout=self.timeout
             )
-            coll.full.append(time.time() - start)
-            coll.server.append(
-                float(r.headers["Server-Timing"].split("=")[1].split(",")[0]) / 1e3
-            )
-            coll.request.append(
-                r.elapsed.seconds + r.elapsed.microseconds / 1e6
-            )
-        return coll
+            r.raise_for_status()
+
+            if test.type == TestType.Down and len(r.content) < test.size:
+                raise ValueError(
+                    "Download response size smaller than expected"
+                )
+
+            full_time = time.time() - start
+            server_timing_header = r.headers.get("Server-Timing")
+            if not server_timing_header:
+                raise ValueError("Missing Server-Timing header")
+
+            server_time = self._parse_server_timing(server_timing_header)
+            request_time = r.elapsed.total_seconds()
+
+            if server_time >= full_time:
+                log.warning(
+                    "Server timing >= full time (server=%s, full=%s); clamping.",
+                    server_time,
+                    full_time,
+                )
+                server_time = max(full_time - 1e-6, 0.0)
+
+            if server_time >= request_time:
+                server_time = max(request_time - 1e-6, 0.0)
+
+            coll.full.append(full_time)
+            coll.server.append(server_time)
+            coll.request.append(request_time)
+
+            if test.type == TestType.Up:
+                ub = r.headers.get("cf-meta-upload-bytes")
+                if ub is not None:
+                    try:
+                        upload_bytes.append(int(ub))
+                    except (ValueError, TypeError):
+                        pass
+
+        return TestTimers(
+            coll.full, coll.server, coll.request, upload_bytes or None
+        )
 
     def _sprint(
         self, label: str, result: TestResult, *, meta: bool = False
@@ -232,6 +324,9 @@ class CloudflareSpeedtest:
 
             if test.name == "latency":
                 latencies = timers.to_latencies()
+                if not latencies:
+                    log.error("No samples recorded for latency test")
+                    continue
                 jitter = timers.jitter_from(latencies)
                 if jitter:
                     jitter = round(jitter, 2)
@@ -243,6 +338,9 @@ class CloudflareSpeedtest:
                 continue
 
             speeds = timers.to_speeds(test)
+            if not speeds:
+                log.error("No samples recorded for test: %s", test.name)
+                continue
             data[test.type.name.lower()].extend(speeds)
             self._sprint(
                 *_with_units(

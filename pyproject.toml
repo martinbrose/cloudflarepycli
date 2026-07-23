@@ -1,6 +1,6 @@
 [project]
 name = "cloudflarepycli"
-version = "2.1.0"
+version = "2.1.6-rc"
 description = "Python CLI and utiltiies for retrieving network performance statistics."
 authors = [{ name = "Tom Evslin", email = "tevslin@gmail.com"}, { name = "Martin Brose", email = "nitramesorb@gmail.com"}]
 readme = "README.md"
